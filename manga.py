@@ -21,6 +21,11 @@ import bisect
 import platform
 import subprocess
 from multiprocessing import freeze_support
+from typing import List, Tuple
+from lib.inmanga import InManga
+from lib.results.manga_class import Manga
+
+from lib.template import MangaTemplate
 
 def install_dependencies(dependencies_file):
   # Check dependencies
@@ -347,7 +352,7 @@ def chapters_to_intervals_string(sorted_chapters, start_end_sep='-', interval_se
 def chapters_in_intervals(sorted_all_chapters, chapter_intervals):
   found_chapters = []
   not_found_chapter_intervals = []
-
+  
   for start_chapter, end_chapter in chapter_intervals:
     # find index of first chapter available greater or equal than start_chapter
     i = bisect.bisect_left(sorted_all_chapters, start_chapter)
@@ -486,8 +491,16 @@ def online_search():
 
   return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
+def create_manga_service_and_search_online(manga_name) -> MangaTemplate:
+  for subclass in MangaTemplate.__subclasses__():
+    manga_class = subclass()
+    manga_class.online_search(manga_name)
+    if manga_class.search_results: break
+  if subclass is None:
+      raise ValueError("No Manga implementation found " + repr(manga_name))
+  return manga_class
+    
 if __name__ == "__main__":
-
   cancellable()
   freeze_support()
   init_console_colors()
@@ -511,6 +524,7 @@ if __name__ == "__main__":
   print_colored(f"Searching '{MANGA}' {search_type}...", Style.BRIGHT)
 
   results = []
+  manga = Manga()
   match = False
   if args.cache: # offline search
     encoded_title = encode(MANGA).upper()
@@ -525,55 +539,46 @@ if __name__ == "__main__":
         results.append(manga_title)
         submatch_manga = manga
   else: # online search
-    for result in online_search():
-      manga_href = result.get('href')
-      if manga_href is None:
-        not_found()
-      manga = manga_href.split('/')[-2] # encoded title
-      manga_uuid = manga_href.split('/')[-1]
-      manga_title = result.find('h4').get_text().strip() # may contain special characters
-      if manga_title.upper() == MANGA.upper():
+    manga_service = create_manga_service_and_search_online(MANGA)
+    results = manga_service.search_results
+    for result in results:
+      if result.title.upper() == MANGA.upper():
         match = True
+        manga_service.current_manga = result
+        manga = manga_service.current_manga
         break
-      results.append(manga_title)
 
   if not match:
     if len(results) > 1:
-      upper_titles = [title.upper() for title in results]
+      upper_titles = [title.title.upper() for title in results]
       error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
     elif len(results) == 1:
-      manga_title = results[0]
+      manga = results[0]
       if args.cache:
         manga = submatch_manga
     else:
       not_found()
 
-  print_colored(manga_title, Fore.BLUE)
+  print_colored(manga.title, Fore.BLUE)
 
   # RETRIEVE CHAPTERS
 
-  directory = os.path.abspath(manga_directory(manga))
+  directory = os.path.abspath(manga_directory(manga.title))
 
   if args.cache:
     ALL_CHAPTERS = [float(chapter[0]) for chapter in folders(directory)]
   else:
-    try:
-      chapters_json = SCRAPER.get(CHAPTERS_WEBSITE + manga_uuid)
-      exit_if_fails(chapters_json)
-    except requests.exceptions.ConnectionError:
-      network_error()
-    chapters_full = load_json(chapters_json.content, 'data', 'result')
-    CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
-    ALL_CHAPTERS = CHAPTERS_IDS.keys()
+    ALL_CHAPTERS = manga_service.get_chapters()
+    #ALL_CHAPTERS = CHAPTERS_IDS.keys()
 
   if not ALL_CHAPTERS:
-    error(f"There are no chapters of '{manga_title}' available {search_type}")
+    error(f"There are no chapters of '{manga.title}' available {search_type}")
   
   ALL_CHAPTERS = sorted(ALL_CHAPTERS)
 
   last = ALL_CHAPTERS[-1]
   
-  CHAPTER_INTERVALS = parse_chapter_intervals(' '.join(args.chapters), last) if args.chapters else get_chapter_intervals(ALL_CHAPTERS)
+  CHAPTER_INTERVALS = manga_service.parse_chapter_intervals(' '.join(args.chapters), last.number) if args.chapters else manga_service.get_chapter_intervals(ALL_CHAPTERS)
 
   CHAPTERS, chapters_not_found_intervals = chapters_in_intervals(ALL_CHAPTERS, CHAPTER_INTERVALS)
 
@@ -599,24 +604,9 @@ if __name__ == "__main__":
     # DOWNLOAD CHAPTERS
 
     for chapter in CHAPTERS:
-      print_colored(f'Downloading {manga_title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
+      print_colored(f'Downloading {manga.title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
 
-      url = CHAPTER_PAGES_WEBSITE + CHAPTERS_IDS[chapter]
-
-      chapter_dir = chapter_directory(manga, chapter)
-      try:
-        page = SCRAPER.get(url)
-
-        if success(page, print_ok=False):
-          html = BeautifulSoup(page.content, 'html.parser')
-          pages = html.find(id='PageList').find_all(True, recursive=False)
-          for page in pages:
-            page_id = page.get('value')
-            page_number = int(page.get_text())
-            url = IMAGE_WEBSITE + page_id
-            download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
-      except requests.exceptions.ConnectionError:
-        network_error()
+      manga_service.download_pages(chapter)
 
   extension = f'.{args.format.lower()}'
   args.format = args.format.upper()
