@@ -14,7 +14,7 @@ class MangaTemplate(ABC):
     def __init__(self):
         self.search_results = []
         self.current_manga = Manga()
-        self.SCRAPER = cloudscraper.create_scraper(browser = 'chrome', allow_brotli = False, debug = True)
+        self.SCRAPER = cloudscraper.create_scraper(browser = 'chrome', allow_brotli = False, debug = False)
         
     """
     The Abstract Class defines a template method that contains a skeleton of

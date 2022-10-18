@@ -163,7 +163,7 @@ if __name__ == "__main__":
     if args.format == 'PDF':
       chapters_paths = []
       for chapter in CHAPTERS:
-        chapter_dir = manga_service.chapter_directory(manga.title, chapter)
+        chapter_dir = chapter_directory(manga.title, chapter)
         page_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda page_path: int(page_path[0]))
         page_paths = list(map(lambda page_path: page_path[1], page_number_paths))
         if args.single:
@@ -187,7 +187,7 @@ if __name__ == "__main__":
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
         with tempfile.TemporaryDirectory() as temp:
-          copy_all([(chapter, manga_service.chapter_directory(manga.title, chapter)) for chapter in CHAPTERS], temp)
+          copy_all([(chapter, chapter_directory(manga.title, chapter)) for chapter in CHAPTERS], temp)
           title = f'{manga.title} {chapter_interval}'
           print_colored(title, Fore.BLUE)
           argv = argv + ['--title', title, temp] # all chapters in manga directory are packed
@@ -199,14 +199,14 @@ if __name__ == "__main__":
         for chapter in CHAPTERS:
           title = f'{manga.title} {chapter:g}'
           print_colored(title, Fore.BLUE)
-          argv_chapter = argv + ['--title', title, manga_service.chapter_directory(manga.title, chapter)]
+          argv_chapter = argv + ['--title', title, chapter_directory(manga.title, chapter)]
           cache_convert(argv_chapter)
           path = f'{MANGA_DIR}/{manga.title} {chapter:g}{extension}'
           os.rename(f'{MANGA_DIR}/{chapter:g}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
   else:
     if len(CHAPTERS) == 1:
-      directory = os.path.abspath(manga_service.chapter_directory(manga.title, CHAPTERS[0]))
+      directory = os.path.abspath(chapter_directory(manga.title, CHAPTERS[0]))
       chapter_intervals_info = ''
     else:
       chapter_intervals_info = f" ({chapters_to_intervals_string(CHAPTERS, interval_sep=', ')})"
