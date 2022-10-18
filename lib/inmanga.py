@@ -1,6 +1,7 @@
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
+from lib.Common import exit_if_fails, network_error
 from lib.results.manga_class import Chapter, Manga
 from lib.template import MangaTemplate
 
@@ -39,9 +40,9 @@ class InManga(MangaTemplate):
         try:
             # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
             search = self.SCRAPER.post(SEARCH_URL, data=data, headers=headers)
-            self.exit_if_fails(search)
+            exit_if_fails(search)
         except requests.exceptions.ConnectionError:
-            self.network_error()
+            network_error()
 
         results_bea = BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
@@ -65,7 +66,7 @@ class InManga(MangaTemplate):
             chapters_json = self.SCRAPER.get(CHAPTERS_WEBSITE + self.current_manga.uuid)
             self.exit_if_fails(chapters_json)
         except requests.exceptions.ConnectionError:
-            self.network_error()
+            network_error()
         chapters_full = self.load_json(chapters_json.content, 'data', 'result')
         #CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
         for chapter in chapters_full:
@@ -92,4 +93,4 @@ class InManga(MangaTemplate):
                     chapter_dir = self.chapter_directory(self.current_manga.title, chapter_num)
                     self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
         except requests.exceptions.ConnectionError:
-            self.network_error()
+            network_error()

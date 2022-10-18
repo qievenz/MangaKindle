@@ -3,9 +3,11 @@ import ast
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
+from lib.Common import exit_if_fails, network_error
 from lib.results.manga_class import Chapter, Manga
 from lib.template import MangaTemplate
 import re
+
 
 PROVIDER_WEBSITE = "https://lectormanga.com"
 IMAGE_WEBSITE = f"https://img1.fashioncomplements.com/uploads"
@@ -38,9 +40,9 @@ class LectorManga(MangaTemplate):
 
         try:
             search = self.SCRAPER.get(SEARCH_URL + manga_name, data=data, headers=headers)
-            self.exit_if_fails(search)
+            exit_if_fails(search)
         except requests.exceptions.ConnectionError:
-            self.network_error()
+            network_error()
 
         results_bea = BeautifulSoup(search.content, 'html.parser').find_all(name="a", attrs={"class" : "text-light font-weight-light"}, href=True, recursive=True)
 
@@ -63,9 +65,9 @@ class LectorManga(MangaTemplate):
         try:
             url = f"{CHAPTERS_WEBSITE}/{self.current_manga.uuid}/{self.current_manga.title}"
             search = self.SCRAPER.get(url)
-            self.exit_if_fails(search)
+            exit_if_fails(search)
         except requests.exceptions.ConnectionError:
-            self.network_error()
+            network_error()
             
         chapter_bea = BeautifulSoup(search.content, 'html.parser').find_all(name="h4", attrs={"class" : "mt-2 text-truncate"}, href=False, recursive=True)
         list_bea = BeautifulSoup(search.content, 'html.parser').find_all(name="ul", attrs={"class" : "list-group list-group-flush chapter-list"}, href=False, recursive=True)
