@@ -1,34 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-VERSION = '1.6'
-
-NAME = 'InMangaKindle'
-WEBSITE = 'https://carleslc.me/InMangaKindle/'
-
-SUPPORT_PYTHON = [(3,6,0), (3,9,9)]
-RECOMMENDED_PYTHON = 'https://www.python.org/downloads/release/python-399/'
-from args_service import set_args, args
+from lib.Args_Single_Service import Args_Single_Service, set_args
 import os
-import re
 import sys
-import math
-import json
-import signal
-import argparse
 import tempfile
-import bisect
-import platform
 import subprocess
 from multiprocessing import freeze_support
-from typing import List, Tuple
 from lib.CheckVersion import CheckVersion
 from lib.Common import *
 from lib.results.manga_class import Manga
-
-from lib.template import MangaTemplate
-from lib.inmanga import InManga
-from lib.lectormanga import LectorManga
 
 def install_dependencies(dependencies_file):
   # Check dependencies
@@ -47,30 +28,11 @@ def install_dependencies(dependencies_file):
 
 install_dependencies("dependencies.txt")
 
-import requests
-import cloudscraper
-from bs4 import BeautifulSoup
+
+from lib.MangaTemplate import MangaTemplate
+from lib.InManga import InManga
+from lib.LectorManga import LectorManga
 from colorama import Fore, Style, init as init_console_colors
-
-PROVIDER_WEBSITE = "https://inmanga.com"
-IMAGE_WEBSITE = f"{PROVIDER_WEBSITE}/page/getPageImage/?identification="
-CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/getall?mangaIdentification="
-CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
-MANGA_WEBSITE = f"{PROVIDER_WEBSITE}/ver/manga"
-
-SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
-
-MANGA_DIR = './manga'
-
-FILENAME_KEEP = set(['_', '-', ' ', '.'])
-DIRECTORY_KEEP = FILENAME_KEEP | set(['/'])
-EXTENSION_KEEP = set('.')
-
-SCRAPER = cloudscraper.create_scraper()
-
-CHAPTERS_FORMAT = 'Format: start..end or chapters with commas. Example: --chapter 3 will download chapter 3, --chapter last will download the last chapter available, --chapters 3..last will download chapters from 3 to the last chapter, --chapter 3 will download only chapter 3, --chapters "3, 12" will download chapters 3 and 12, --chapters "3..12, 15" will download chapters from 3 to 12 and also chapter 15.'
-
-
 
 
 def create_manga_service_and_search_online(manga_name) -> MangaTemplate:
@@ -88,9 +50,11 @@ if __name__ == "__main__":
   init_console_colors()
   
   # PARSE ARGS
-  set_args(CheckVersion)
+  ass = Args_Single_Service()
+  ass.args = set_args(CheckVersion)
+  args = ass.args
 
-  check_version()
+  check_version(args.cache)
 
   MANGA_DIR = strip_path(args.directory, DIRECTORY_KEEP)
 
@@ -121,7 +85,7 @@ if __name__ == "__main__":
         submatch_manga = manga
   else: # online search
     manga_service = create_manga_service_and_search_online(MANGA)
-    manga_service.network_error()
+    
     results = manga_service.search_results
     for result in results:
       if result.title.upper().strip() == MANGA.upper().strip():
@@ -197,9 +161,6 @@ if __name__ == "__main__":
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
 
     if args.format == 'PDF':
-      import img2pdf
-      if args.remove_alpha:
-        import wand.image
       chapters_paths = []
       for chapter in CHAPTERS:
         chapter_dir = manga_service.chapter_directory(manga.title, chapter)

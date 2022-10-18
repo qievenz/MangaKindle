@@ -2,11 +2,13 @@ import argparse
 
 from lib.Constants import CHAPTERS_FORMAT, MANGA_DIR, NAME, VERSION, WEBSITE
 
-# class args_service():
-#   def __init__(self, checkversion):
-#     self.args = self.set_args(checkversion)
-
-global args
+class Args_Single_Service(object):
+  _shared_borg_state = {}
+      
+  def __new__(cls, *args, **kwargs):
+    obj = super(Args_Single_Service, cls).__new__(cls, *args, **kwargs)
+    obj.__dict__ = cls._shared_borg_state
+    return obj
 
 def set_args(checkversion):
   parser = argparse.ArgumentParser(prog=NAME, epilog=f'web: {WEBSITE}')
@@ -21,10 +23,5 @@ def set_args(checkversion):
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
   parser.add_argument("--version", "-v", action=checkversion, help="Display current InMangaKindle version", version=VERSION)
-  args = parser.parse_args()
+  return parser.parse_args()
 
-def get_args():
-  return args
-
-
-args = get_args()

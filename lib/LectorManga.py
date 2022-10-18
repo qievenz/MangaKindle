@@ -5,9 +5,8 @@ from typing import Dict, List
 from bs4 import BeautifulSoup
 from lib.Common import exit_if_fails, network_error
 from lib.results.manga_class import Chapter, Manga
-from lib.template import MangaTemplate
+from lib.MangaTemplate import MangaTemplate
 import re
-
 
 PROVIDER_WEBSITE = "https://lectormanga.com"
 IMAGE_WEBSITE = f"https://img1.fashioncomplements.com/uploads"

@@ -11,8 +11,8 @@ from colorama import Fore, Style, init as init_console_colors
 import os
 import subprocess
 import platform
+from lib.Args_Single_Service import Args_Single_Service
 from lib.Constants import *
-import args_service
 from lib.results.manga_class import Chapter
 
 def load_json(data, *keys):
@@ -65,20 +65,21 @@ def write_file(path, data):
     with open(path, 'wb') as handler:
         handler.write(data)
 
-def check_version(name, version):
+def check_version():
+  args = Args_Single_Service().args
   latest_version = None
   try:
-    response = request.get(f'https://api.github.com/repos/Carleslc/{name}/releases/latest')
+    response = request.get(f'https://api.github.com/repos/Carleslc/{NAME}/releases/latest')
     html_url = load_json(response.content, 'html_url')
     latest_version = load_json(response.content, 'tag_name')
   except:
-    if not args_service.args.cache:
-      print_dim(f'Cannot check for updates. Version: {version}', Fore.YELLOW)
+    if not args.cache:
+      print_dim(f'Cannot check for updates. Version: {VERSION}', Fore.YELLOW)
   if latest_version is None:
     return False
-  is_updated = latest_version == version
+  is_updated = latest_version == VERSION
   if not is_updated:
-    print_colored(f'New version is available! {version} -> {latest_version}', Style.BRIGHT, Fore.GREEN)
+    print_colored(f'New version is available! {VERSION} -> {latest_version}', Style.BRIGHT, Fore.GREEN)
     print_colored(f'Upgrade to the latest version: {html_url}', Fore.GREEN)
     if os.path.isdir('.git'):
       print_colored('Git detected. Do you want to checkout the new version❓ [Y/n]', Fore.YELLOW, Style.BRIGHT, end=' ')
@@ -109,6 +110,7 @@ def python_not_supported():
   return f'Your Python version {platform.python_version()} is not fully supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
 
 def network_error():
+  args = Args_Single_Service().args
   tip = 'Are you connected to Internet?'
   if not args.cache:
     tip += '\nYou can use offline mode (using your already downloaded chapters) with --cache'
@@ -326,6 +328,7 @@ def removeAlpha(image_path):
       img.save(filename=image_path)
 
 def convert_to_pdf(path, chapters_paths):
+  args = Args_Single_Service().args
   if not check_exists_file(path):
     if args.remove_alpha:
       print_dim(f'Removing alpha channel from images for {path}')

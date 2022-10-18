@@ -1,7 +1,7 @@
 import argparse
 
 from lib.Common import NAME, VERSION, check_version, is_python_version_supported, python_not_supported, print_colored
-from colorama import Fore, Style, init as init_console_colors
+from colorama import Fore, Style
 
 class CheckVersion(argparse.Action):
     def __init__(self, option_strings, version=VERSION, **kwargs):
