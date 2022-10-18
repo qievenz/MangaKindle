@@ -54,7 +54,7 @@ if __name__ == "__main__":
   ass.args = set_args(CheckVersion)
   args = ass.args
 
-  check_version(args.cache)
+  check_version()
 
   MANGA_DIR = strip_path(args.directory, DIRECTORY_KEEP)
 
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
   # RETRIEVE CHAPTERS
 
-  directory = os.path.abspath(manga_service.manga_directory(manga.title))
+  directory = os.path.abspath(manga_directory(manga.title))
 
   if args.cache:
     ALL_CHAPTERS = [float(chapter[0]) for chapter in folders(directory)]
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
   last = ALL_CHAPTERS[-1]
   
-  CHAPTER_INTERVALS = manga_service.parse_chapter_intervals(' '.join(args.chapters), last.number) if args.chapters else manga_service.get_chapter_intervals(ALL_CHAPTERS)
+  CHAPTER_INTERVALS = parse_chapter_intervals(' '.join(args.chapters), last.number) if args.chapters else get_chapter_intervals(ALL_CHAPTERS)
 
   CHAPTERS, chapters_not_found_intervals = chapters_in_intervals(ALL_CHAPTERS, CHAPTER_INTERVALS)
 

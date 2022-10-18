@@ -3,7 +3,7 @@ import ast
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
-from lib.Common import exit_if_fails, network_error
+from lib.Common import chapter_directory, exit_if_fails, network_error, success
 from lib.results.manga_class import Chapter, Manga
 from lib.MangaTemplate import MangaTemplate
 import re
@@ -103,17 +103,17 @@ class LectorManga(MangaTemplate):
                     'sec-gpc': '1'
                 }
         
-        self.renew_scrapper(renew=True)
+        self.renew_scrapper()
         url_1_get = self.SCRAPER.get(manga_chapter.url, headers=headers)
 
-        if self.success(url_1_get, print_ok=False):
+        if success(url_1_get, print_ok=False):
             url_1_bea = BeautifulSoup(url_1_get.content, 'html.parser')
             
             date = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-3]
             id = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-2]
             pages = ast.literal_eval(re.search("var images = JSON.parse(.*);", str(url_1_bea)).group(1).replace('(\'', '').replace('\')', ''))
 
-            chapter_dir = self.chapter_directory(self.current_manga.title, chapter_num)
+            chapter_dir = chapter_directory(self.current_manga.title, chapter_num)
             page_number = 1
             headers = {
                 'Accept-Encoding': 'gzip, deflate, br',

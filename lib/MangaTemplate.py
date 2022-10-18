@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import os
 from typing import List
 from colorama import Fore
+from lib.Common import encode_path, print_colored, success, write_file
 from lib.results.manga_class import Chapter, Manga
 import cloudscraper
 
@@ -35,16 +36,16 @@ class MangaTemplate(ABC):
                                     captcha={'provider': '2captcha'})
     
     def download(self, filename, url, directory='.', extension='png', text='', ok=200, headers=None):
-        path = self.encode_path(filename, extension, directory)
+        path = encode_path(filename, extension, directory)
         if os.path.isfile(path):
             text = text if text else path
             separation = ' ' * (20 - len(text))
-            self.print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
+            print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
             return False
         req = self.SCRAPER.get(url, headers=headers)
-        if self.success(req, text, ok, print_ok=bool(text)):
+        if success(req, text, ok, print_ok=bool(text)):
             data = req.content
-            self.write_file(path, data)
+            write_file(path, data)
             return True
         return False
     
