@@ -6,6 +6,8 @@ from typing import List, Tuple
 from colorama import Fore, Style, init as init_console_colors
 
 from lib.results.manga_class import Chapter, Manga
+from lib.inmanga import InManga
+from lib.lectormanga import LectorManga
 
 import cloudscraper
 import bisect
@@ -36,16 +38,14 @@ class MangaTemplate(ABC):
     """
 
     # These operations already have implementations.
-    def get_scrapper(self, renew=False):
-        if renew:
-            self.SCRAPER = cloudscraper.create_scraper(delay=10,
-                                        browser={
-                                                'browser': 'chrome',
-                                                'platform': 'android',
-                                                'desktop': False
-                                                },
-                                        captcha={'provider': '2captcha'})
-        return self.SCRAPER        
+    def renew_scrapper(self):
+        self.SCRAPER = cloudscraper.create_scraper(delay=10,
+                                    browser={
+                                            'browser': 'chrome',
+                                            'platform': 'android',
+                                            'desktop': False
+                                            },
+                                    captcha={'provider': '2captcha'})
     
     def load_json(self, data, *keys):
         data = json.loads(data)
@@ -251,15 +251,6 @@ class MangaTemplate(ABC):
     @abstractmethod
     def get_chapters(self) -> List[Chapter]:
         pass
-
-    # @abstractmethod
-    # def required_operations2(self) -> None:
-    #     pass
-
-    # These are "hooks." Subclasses may override them, but it's not mandatory
-    # since the hooks already have default (but empty) implementation. Hooks
-    # provide additional extension points in some crucial places of the
-    # algorithm.
 
     def hook1(self) -> None:
         pass

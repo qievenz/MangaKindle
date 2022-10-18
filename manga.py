@@ -22,8 +22,6 @@ import platform
 import subprocess
 from multiprocessing import freeze_support
 from typing import List, Tuple
-from lib.inmanga import InManga
-from lib.lectormanga import LectorManga
 from lib.results.manga_class import Manga
 
 from lib.template import MangaTemplate

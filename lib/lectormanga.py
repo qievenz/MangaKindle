@@ -1,8 +1,5 @@
 
-from playwright.sync_api import sync_playwright
 import ast
-from random import random
-import time
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
@@ -11,10 +8,9 @@ from lib.template import MangaTemplate
 import re
 
 PROVIDER_WEBSITE = "https://lectormanga.com"
-IMAGE_WEBSITE = f"{PROVIDER_WEBSITE}/page/getPageImage/?identification="
+IMAGE_WEBSITE = f"https://img1.fashioncomplements.com/uploads"
 CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/library/manga"
 SEARCH_URL = f"{PROVIDER_WEBSITE}/library?title="
-CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
 DOMAINS = ["recipeski", "chefac", "fashioncomplements", "recipesandcooker"]
 
 class LectorManga(MangaTemplate):
@@ -89,14 +85,12 @@ class LectorManga(MangaTemplate):
     def download_pages(self, chapter_num) -> None:
         manga_chapter = self.current_manga.chapters[chapter_num]
         headers = {
-                    #'Origin': manga_chapter.url,
                     'Accept-Encoding': 'gzip, deflate',
                     'Accept-Language': 'es-419,es;q=0.8',
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                     'Referer': self.current_manga.url,
-                    #'X-Requested-With': 'XMLHttpRequest',
                     'sec-fetch-mode': 'navigate',
                     'Cache-Control': 'no-cache',
                     'Upgrade-Insecure-Requests': '1',
@@ -107,52 +101,26 @@ class LectorManga(MangaTemplate):
                     'sec-fetch-user': '?1',
                     'sec-gpc': '1'
                 }
-        # try:from playwright.sync_api import sync_playwright
-        # with sync_playwright() as p:
-        #     browser = p.webkit.launch(headless=False)
-        #     page = browser.new_page()
-        #     pagionao = manga_chapter.url
-        #     page.goto(pagionao)
-        #     url_1_get = page.query_selector(".user-agent")
         
-        self.get_scrapper(renew=True)
+        self.renew_scrapper(renew=True)
         url_1_get = self.SCRAPER.get(manga_chapter.url, headers=headers)
-        # except requests.exceptions.ConnectionError:
-        #     self.network_error()
 
         if self.success(url_1_get, print_ok=False):
             url_1_bea = BeautifulSoup(url_1_get.content, 'html.parser')
-            # url_2 = re.search('action="(.*)" class', str(url_1_bea)).group(1)
             
-            #time.sleep(random()*10)
-            # url_2_get = SCRAPER.get(url_2, headers=headers)
-            # url_2_bea = BeautifulSoup(url_2_get.content, 'html.parser')
-            domain = "https://" + (re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-5])
             date = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-3]
             id = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-2]
             pages = ast.literal_eval(re.search("var images = JSON.parse(.*);", str(url_1_bea)).group(1).replace('(\'', '').replace('\')', ''))
 
-            # with sync_playwright() as p:
-            #     browser = p.webkit.launch(headless=False)
-            #     page = browser.new_page()
-            #     pagionao = 'https://lectormanga.com/library/manga/41746/mieruko-chan'
-            #     page.goto(pagionao)
-            #     pagionao = manga_chapter.url
-            #     page.goto(pagionao)
-            #     pagionao = f"{domain}/uploads/{date}/{id}/{pages[0]}"
-            #     page.goto(pagionao)
-
             chapter_dir = self.chapter_directory(self.current_manga.title, chapter_num)
             page_number = 1
             headers = {
-                #'Origin': manga_chapter.url,
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Accept-Language': 'es-419,es;q=0.6',
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
                 'Referer': self.current_manga.url,
-                #'X-Requested-With': 'XMLHttpRequest',
                 'Cache-Control': 'no-cache',
                 'Upgrade-Insecure-Requests': '1',
                 'Connection': 'keep-alive',
@@ -162,21 +130,8 @@ class LectorManga(MangaTemplate):
                 'sec-fetch-user': '?1',
                 'sec-gpc': '1'
             }
+            
             for img in pages:
-                domain = "https://img1.fashioncomplements.com"
-                url = f"{domain}/uploads/{date}/{id}/{img}"
-                #a = requests.get(url, headers=headers)
-                #self.SCRAPER = SCRAPER
-                downlad_ok = self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', headers=headers)
-
+                url = f"{IMAGE_WEBSITE}/{date}/{id}/{img}"
+                self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', headers=headers)
                 page_number = page_number+1
-
-
-
-    def try_download(self, page_number, chapter_dir, pages, date, id, img):
-        for domain in DOMAINS:
-            url = f"https://img1.{domain}.com/uploads/{date}/{id}/{img}"
-            downlad_ok = self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
-            if downlad_ok:
-               break 
-        #self.try_download(page_number, chapter_dir, pages, date, id, img)
