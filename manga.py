@@ -23,6 +23,7 @@ import subprocess
 from multiprocessing import freeze_support
 from typing import List, Tuple
 from lib.inmanga import InManga
+from lib.lectormanga import LectorManga
 from lib.results.manga_class import Manga
 
 from lib.template import MangaTemplate
@@ -531,18 +532,18 @@ if __name__ == "__main__":
     for cached in folders(MANGA_DIR):
       manga = cached[0]
       encoded_cached = manga.upper()
-      manga_title = decode(manga)
+      manga.title = decode(manga)
       if encoded_title == encoded_cached:
         match = True
         break
       elif encoded_cached in encoded_title or encoded_title in encoded_cached:
-        results.append(manga_title)
+        results.append(manga.title)
         submatch_manga = manga
   else: # online search
     manga_service = create_manga_service_and_search_online(MANGA)
     results = manga_service.search_results
     for result in results:
-      if result.title.upper() == MANGA.upper():
+      if result.title.upper().strip() == MANGA.upper().strip():
         match = True
         manga_service.current_manga = result
         manga = manga_service.current_manga
@@ -620,17 +621,17 @@ if __name__ == "__main__":
         import wand.image
       chapters_paths = []
       for chapter in CHAPTERS:
-        chapter_dir = chapter_directory(manga, chapter)
+        chapter_dir = manga_service.chapter_directory(manga.title, chapter)
         page_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda page_path: int(page_path[0]))
         page_paths = list(map(lambda page_path: page_path[1], page_number_paths))
         if args.single:
           chapters_paths.extend(page_paths)
         else:
-          path = f'{MANGA_DIR}/{manga_title} {chapter:g}{extension}'
+          path = f'{MANGA_DIR}/{manga.title} {chapter:g}{extension}'
           convert_to_pdf(path, page_paths)
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
-        path = f'{MANGA_DIR}/{manga_title} {chapter_interval}{extension}'
+        path = f'{MANGA_DIR}/{manga.title} {chapter_interval}{extension}'
         convert_to_pdf(path, chapters_paths)
     else:
       # CONVERT TO E-READER FORMAT
@@ -644,26 +645,26 @@ if __name__ == "__main__":
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
         with tempfile.TemporaryDirectory() as temp:
-          copy_all([(chapter, chapter_directory(manga, chapter)) for chapter in CHAPTERS], temp)
-          title = f'{manga_title} {chapter_interval}'
+          copy_all([(chapter, manga_service.chapter_directory(manga.title, chapter)) for chapter in CHAPTERS], temp)
+          title = f'{manga.title} {chapter_interval}'
           print_colored(title, Fore.BLUE)
           argv = argv + ['--title', title, temp] # all chapters in manga directory are packed
           cache_convert(argv)
-          path = f'{MANGA_DIR}/{manga_title} {chapter_interval}{extension}'
+          path = f'{MANGA_DIR}/{manga.title} {chapter_interval}{extension}'
           os.rename(f'{MANGA_DIR}/{os.path.basename(temp)}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
       else:
         for chapter in CHAPTERS:
-          title = f'{manga_title} {chapter:g}'
+          title = f'{manga.title} {chapter:g}'
           print_colored(title, Fore.BLUE)
-          argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
+          argv_chapter = argv + ['--title', title, manga_service.chapter_directory(manga.title, chapter)]
           cache_convert(argv_chapter)
-          path = f'{MANGA_DIR}/{manga_title} {chapter:g}{extension}'
+          path = f'{MANGA_DIR}/{manga.title} {chapter:g}{extension}'
           os.rename(f'{MANGA_DIR}/{chapter:g}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
   else:
     if len(CHAPTERS) == 1:
-      directory = os.path.abspath(chapter_directory(manga, CHAPTERS[0]))
+      directory = os.path.abspath(manga_service.chapter_directory(manga.title, CHAPTERS[0]))
       chapter_intervals_info = ''
     else:
       chapter_intervals_info = f" ({chapters_to_intervals_string(CHAPTERS, interval_sep=', ')})"

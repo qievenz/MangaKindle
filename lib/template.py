@@ -20,11 +20,12 @@ CHAPTERS_FORMAT = 'Format: start..end or chapters with commas. Example: --chapte
 class MangaTemplate(ABC):
     search_results: List[Manga]
     current_manga: Manga
-    SCRAPER = cloudscraper.create_scraper()
     
     def __init__(self):
         self.search_results = []
         self.current_manga = Manga()
+        self.SCRAPER = cloudscraper.create_scraper(browser = 'chrome', allow_brotli = False, debug = True)
+        
     """
     The Abstract Class defines a template method that contains a skeleton of
     some algorithm, composed of calls to (usually) abstract primitive
@@ -35,6 +36,16 @@ class MangaTemplate(ABC):
     """
 
     # These operations already have implementations.
+    def get_scrapper(self, renew=False):
+        if renew:
+            self.SCRAPER = cloudscraper.create_scraper(delay=10,
+                                        browser={
+                                                'browser': 'chrome',
+                                                'platform': 'android',
+                                                'desktop': False
+                                                },
+                                        captcha={'provider': '2captcha'})
+        return self.SCRAPER        
     
     def load_json(self, data, *keys):
         data = json.loads(data)
@@ -71,14 +82,14 @@ class MangaTemplate(ABC):
         with open(path, 'wb') as handler:
             handler.write(data)
     
-    def download(self, filename, url, directory='.', extension='png', text='', ok=200):
+    def download(self, filename, url, directory='.', extension='png', text='', ok=200, headers=None):
         path = self.encode_path(filename, extension, directory)
         if os.path.isfile(path):
             text = text if text else path
             separation = ' ' * (20 - len(text))
             self.print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
             return False
-        req = self.SCRAPER.get(url)
+        req = self.SCRAPER.get(url, headers=headers)
         if self.success(req, text, ok, print_ok=bool(text)):
             data = req.content
             self.write_file(path, data)
@@ -134,7 +145,16 @@ class MangaTemplate(ABC):
             return self.merge_intervals(map(parse_chapter_interval, chapter_intervals_str.split(interval_sep)))
         except ValueError:
             self.error(f'Invalid chapters format', CHAPTERS_FORMAT)
-
+    
+    def error(self, message, tip=''):
+        self.print_colored(message, Fore.RED, Style.BRIGHT)
+        if tip:
+            self.print_dim(tip)
+        exit()
+    
+    def print_dim(self, s, *colors):
+        self.print_colored(s, Style.DIM, *colors)
+  
     def get_chapter_intervals(self, sorted_chapters:List[Chapter]) -> List[Tuple[float, float]]:
         chapter_intervals = [] # list[(start, end)]
 
@@ -207,10 +227,10 @@ class MangaTemplate(ABC):
         return found_chapters, not_found_chapter_intervals
 
     def manga_directory(self, manga):
-        return f'{MANGA_DIR}/{manga}'
+        return self.strip_path(f'{MANGA_DIR}/{manga}', DIRECTORY_KEEP)
 
     def chapter_directory(self, manga, chapter):
-        return f'{self.manga_directory(manga)}/{chapter:g}'
+        return self.strip_path(f'{self.manga_directory(manga)}/{chapter:g}', DIRECTORY_KEEP)
     
     def strip_path(self, path, keep):
         return ''.join(c for c in path if c.isalnum() or c in keep).strip()
@@ -218,7 +238,12 @@ class MangaTemplate(ABC):
     def encode_path(self, filename, extension, directory='.'):
         return self.strip_path(f'{directory}/{filename}', DIRECTORY_KEEP) + '.' + self.strip_path(extension, EXTENSION_KEEP)
 
-
+    def network_error(self):
+        tip = 'Are you connected to Internet?'
+        if True:#not args.cache:
+            tip += '\nYou can use offline mode (using your already downloaded chapters) with --cache'
+        self.error('Network error', tip)
+  
     @abstractmethod
     def online_search(self, manga_name) -> List[Manga]:
         pass
