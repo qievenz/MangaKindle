@@ -269,7 +269,9 @@ def join_chapter_intervals(chapter_intervals, start_end_sep='..', interval_sep='
         start, end = chapter_interval
         return f'{start:g}{start_end_sep}{end:g}' if start != end else f'{start:g}'
     return interval_sep.join(map(chapter_interval_str, chapter_intervals))
-  
+
+def titles_match(name_1, name_2):
+  return encode(name_1).upper().strip() == encode(name_2).upper().strip()
 
 def decode(title):
   return title.replace('-', ' ')

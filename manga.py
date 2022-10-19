@@ -39,10 +39,9 @@ from colorama import Fore, Style, init as init_console_colors
 
 
 def create_manga_service_and_search_online(manga_name) -> MangaTemplate:
-  manga_name_encode = urllib.parse.quote(manga_name)
   for subclass in MangaTemplate.__subclasses__():
     manga_class = subclass()
-    manga_class.online_search(manga_name_encode)
+    manga_class.online_search(manga_name)
     if manga_class.search_results: break
   if subclass is None:
       raise ValueError("No Manga implementation found " + repr(manga_name))
@@ -79,38 +78,33 @@ if __name__ == "__main__":
   if args.cache: # offline search
     encoded_title = encode(MANGA).upper()
     for cached in folders(MANGA_DIR):
-      manga = cached[0]
-      encoded_cached = manga.upper()
-      manga.title = decode(manga)
-      if encoded_title == encoded_cached:
+      manga_cache_name = cached[0]
+      encoded_cached = manga_cache_name.upper()
+      if titles_match(MANGA, manga_cache_name):
         match = True
+        manga.title = decode(manga_cache_name)
+        results.append(manga)
         break
-      elif encoded_cached in encoded_title or encoded_title in encoded_cached:
-        results.append(manga.title)
-        submatch_manga = manga
   else: # online search
     manga_service = create_manga_service_and_search_online(MANGA)
     
     results = manga_service.search_results
-    for result in results:
-      if result.title.upper().strip() == MANGA.upper().strip():
-        match = True
-        manga_service.current_manga = result
-        manga = manga_service.current_manga
-        break
-
-  if not match:
-    if len(results) > 1:
-      upper_titles = [title.title.upper() for title in results]
-      error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
+    if len(results) == 0:
+      not_found(MANGA)
     elif len(results) == 1:
-      manga = results[0]
-      if args.cache:
-        manga = submatch_manga
-    else:
-      not_found(manga.title)
+        match = True
+        manga_service.current_manga = results[0]
+        manga = manga_service.current_manga
+    elif len(results) > 1:
+      print("select one")
+      i = 0
+      for title in results:
+        print(f"[{i}] {title.title}")
+        i = i+1
+      manga_service.current_manga = results[int(input())]
+      manga = manga_service.current_manga
 
-  print_colored(manga.title, Fore.BLUE)
+  print_colored(MANGA, Fore.BLUE)
 
   # RETRIEVE CHAPTERS
 
