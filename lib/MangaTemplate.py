@@ -16,16 +16,6 @@ class MangaTemplate(ABC):
         self.current_manga = Manga()
         self.SCRAPER = cloudscraper.create_scraper(browser = 'chrome', allow_brotli = False, debug = False)
         
-    """
-    The Abstract Class defines a template method that contains a skeleton of
-    some algorithm, composed of calls to (usually) abstract primitive
-    operations.
-
-    Concrete subclasses should implement these operations, but leave the
-    template method itself intact.
-    """
-
-    # These operations already have implementations.
     def renew_scrapper(self):
         self.SCRAPER = cloudscraper.create_scraper(delay=10,
                                     browser={
@@ -34,7 +24,7 @@ class MangaTemplate(ABC):
                                             'desktop': False
                                             },
                                     captcha={'provider': '2captcha'})
-    
+
     def download(self, filename, url, directory='.', extension='png', text='', ok=200, headers=None):
         path = encode_path(filename, extension, directory)
         if os.path.isfile(path):
@@ -49,7 +39,6 @@ class MangaTemplate(ABC):
             return True
         return False
     
-    
     @abstractmethod
     def online_search(self, manga_name) -> List[Manga]:
         pass
@@ -57,3 +46,8 @@ class MangaTemplate(ABC):
     @abstractmethod
     def get_chapters(self) -> List[Chapter]:
         pass
+    
+    @abstractmethod
+    def download_pages(self, chapter_num) -> None:
+        pass
+    

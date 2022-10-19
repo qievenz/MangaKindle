@@ -2,11 +2,11 @@ import argparse
 
 from lib.Constants import CHAPTERS_FORMAT, MANGA_DIR, NAME, VERSION, WEBSITE
 
-class Args_Single_Service(object):
+class ArgsSingleService(object):
   _shared_borg_state = {}
       
   def __new__(cls, *args, **kwargs):
-    obj = super(Args_Single_Service, cls).__new__(cls, *args, **kwargs)
+    obj = super(ArgsSingleService, cls).__new__(cls, *args, **kwargs)
     obj.__dict__ = cls._shared_borg_state
     return obj
 

@@ -1,7 +1,7 @@
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
-from lib.Common import exit_if_fails, network_error
+from lib.Common import chapter_directory, exit_if_fails, load_json, network_error, not_found, success
 from lib.results.manga_class import Chapter, Manga
 from lib.MangaTemplate import MangaTemplate
 
@@ -50,7 +50,7 @@ class InManga(MangaTemplate):
             result = Manga()
             result.url = result_bea.get('href')
             if result.url is None:
-                self.not_found()
+                not_found()
             result.encoded_title = result.url.split('/')[-2] # encoded title
             result.uuid = result.url.split('/')[-1]
             result.title = result_bea.find('h4').get_text().strip() # may contain special characters
@@ -64,10 +64,10 @@ class InManga(MangaTemplate):
             return self.current_manga.chapters
         try:
             chapters_json = self.SCRAPER.get(CHAPTERS_WEBSITE + self.current_manga.uuid)
-            self.exit_if_fails(chapters_json)
+            exit_if_fails(chapters_json)
         except requests.exceptions.ConnectionError:
             network_error()
-        chapters_full = self.load_json(chapters_json.content, 'data', 'result')
+        chapters_full = load_json(chapters_json.content, 'data', 'result')
         #CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
         for chapter in chapters_full:
             manga_chapter = Chapter()
@@ -83,14 +83,14 @@ class InManga(MangaTemplate):
         try:
             chapter_page = self.SCRAPER.get(manga_chapter.url)
 
-            if self.success(chapter_page, print_ok=False):
+            if success(chapter_page, print_ok=False):
                 html = BeautifulSoup(chapter_page.content, 'html.parser')
                 pages = html.find(id='PageList').find_all(True, recursive=False)
                 for page in pages:
                     page_id = page.get('value')
                     page_number = int(page.get_text())
                     url = IMAGE_WEBSITE + page_id
-                    chapter_dir = self.chapter_directory(self.current_manga.title, chapter_num)
+                    chapter_dir = chapter_directory(self.current_manga.title, chapter_num)
                     self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
         except requests.exceptions.ConnectionError:
             network_error()

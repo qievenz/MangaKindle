@@ -11,7 +11,7 @@ from colorama import Fore, Style, init as init_console_colors
 import os
 import subprocess
 import platform
-from lib.Args_Single_Service import Args_Single_Service
+from lib.ArgsSingleService import ArgsSingleService
 from lib.Constants import *
 from lib.results.manga_class import Chapter
 
@@ -66,7 +66,7 @@ def write_file(path, data):
         handler.write(data)
 
 def check_version():
-  args = Args_Single_Service().args
+  args = ArgsSingleService().args
   latest_version = None
   try:
     response = request.get(f'https://api.github.com/repos/Carleslc/{NAME}/releases/latest')
@@ -110,7 +110,7 @@ def python_not_supported():
   return f'Your Python version {platform.python_version()} is not fully supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
 
 def network_error():
-  args = Args_Single_Service().args
+  args = ArgsSingleService().args
   tip = 'Are you connected to Internet?'
   if not args.cache:
     tip += '\nYou can use offline mode (using your already downloaded chapters) with --cache'
@@ -328,7 +328,7 @@ def removeAlpha(image_path):
       img.save(filename=image_path)
 
 def convert_to_pdf(path, chapters_paths):
-  args = Args_Single_Service().args
+  args = ArgsSingleService().args
   if not check_exists_file(path):
     if args.remove_alpha:
       print_dim(f'Removing alpha channel from images for {path}')

@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from lib.Args_Single_Service import Args_Single_Service, set_args
+import multiprocessing
+
+import urllib.parse
+from lib.ArgsSingleService import ArgsSingleService, set_args
 import os
 import sys
 import tempfile
@@ -36,13 +39,15 @@ from colorama import Fore, Style, init as init_console_colors
 
 
 def create_manga_service_and_search_online(manga_name) -> MangaTemplate:
+  manga_name_encode = urllib.parse.quote(manga_name)
   for subclass in MangaTemplate.__subclasses__():
     manga_class = subclass()
-    manga_class.online_search(manga_name)
+    manga_class.online_search(manga_name_encode)
     if manga_class.search_results: break
   if subclass is None:
       raise ValueError("No Manga implementation found " + repr(manga_name))
   return manga_class
+
     
 if __name__ == "__main__":
   cancellable()
@@ -50,7 +55,7 @@ if __name__ == "__main__":
   init_console_colors()
   
   # PARSE ARGS
-  ass = Args_Single_Service()
+  ass = ArgsSingleService()
   ass.args = set_args(CheckVersion)
   args = ass.args
 
@@ -103,7 +108,7 @@ if __name__ == "__main__":
       if args.cache:
         manga = submatch_manga
     else:
-      not_found()
+      not_found(manga.title)
 
   print_colored(manga.title, Fore.BLUE)
 
@@ -147,8 +152,7 @@ if __name__ == "__main__":
     error("No chapters found")
 
   if not args.cache:
-    # DOWNLOAD CHAPTERS
-
+    # DOWNLOAD CHAPTERS    
     for chapter in CHAPTERS:
       print_colored(f'Downloading {manga.title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
 
