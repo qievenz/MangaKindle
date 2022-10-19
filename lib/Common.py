@@ -1,4 +1,5 @@
 
+import urllib.parse
 import bisect
 import math
 import re
@@ -372,3 +373,6 @@ def cache_convert(argv):
     manga2ebook(argv)
   except Exception as e:
     convert_except(e, argv)
+    
+def encode_url_format(name):
+  return urllib.parse.quote(name)

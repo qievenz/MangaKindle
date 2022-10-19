@@ -3,7 +3,7 @@ import ast
 import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
-from lib.Common import chapter_directory, exit_if_fails, network_error, success
+from lib.Common import chapter_directory, encode_url_format, exit_if_fails, network_error, not_found, success
 from lib.results.manga_class import Chapter, Manga
 from lib.MangaTemplate import MangaTemplate
 import re
@@ -25,7 +25,7 @@ class LectorManga(MangaTemplate):
             'order_item': 'likes_count',
             'order_dir': 'desc'
         }
-
+        
         headers = {
             'Origin': PROVIDER_WEBSITE,
             'Accept-Encoding': 'gzip, deflate',
@@ -36,9 +36,10 @@ class LectorManga(MangaTemplate):
             'Referer': SEARCH_URL + manga_name,
             'X-Requested-With': 'XMLHttpRequest'
         }
+        manga_name_encode = encode_url_format(manga_name)
 
         try:
-            search = self.SCRAPER.get(SEARCH_URL + manga_name, data=data, headers=headers)
+            search = self.SCRAPER.get(SEARCH_URL + manga_name_encode, data=data, headers=headers)
             exit_if_fails(search)
         except requests.exceptions.ConnectionError:
             network_error()
@@ -49,7 +50,7 @@ class LectorManga(MangaTemplate):
             result = Manga()
             result.url = result_bea.get('href')
             if result.url is None:
-                self.not_found()
+                not_found()
             result.encoded_title = result.url.split('/')[-1] # encoded title
             result.uuid = result.url.split('/')[-2]
             result.title = result_bea.get('title') # may contain special characters
