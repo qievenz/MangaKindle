@@ -193,6 +193,12 @@ def get_chapter_intervals(sorted_chapters:List[Chapter]) -> List[Tuple[float, fl
         chapter_intervals.append((start_chapter, end_chapter))
     
     return chapter_intervals
+  
+def compare_lists(lst_have, lst_want):
+  lst_have = [str(value) for value in sorted(lst_have)]
+  lst_want = [str(value) for value in sorted(lst_want)]
+  lst_lack = set(lst_want).difference(set(lst_have))
+  return lst_lack
 
 def chapters_in_intervals(sorted_all_chapters, chapter_intervals):
     found_chapters = []

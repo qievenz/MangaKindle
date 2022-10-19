@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing
-
-import urllib.parse
 from lib.ArgsSingleService import ArgsSingleService, set_args
 import os
 import sys
