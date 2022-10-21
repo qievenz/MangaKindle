@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import multiprocessing
 from lib.ArgsSingleService import ArgsSingleService, set_args
 import os
 import sys

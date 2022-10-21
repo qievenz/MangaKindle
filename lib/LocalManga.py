@@ -12,7 +12,7 @@ class LocalManga():
     def __init__(self):
         self.current_manga = Manga()
     
-    def local_search(self, title, directory = MANGA_DIR) -> None:
+    def local_search(self, title, directory = MANGA_DIR) -> List[Manga]:
         for subdir, path in folders(directory):
             if titles_match(title, subdir):
                 self.current_manga.title = decode(subdir)

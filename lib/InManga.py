@@ -62,11 +62,8 @@ class InManga(MangaTemplate):
     def get_chapters(self) -> Dict[float, Chapter]:
         if self.current_manga.chapters:
             return self.current_manga.chapters
-        try:
-            chapters_json = self.SCRAPER.get(CHAPTERS_WEBSITE + self.current_manga.uuid)
-            exit_if_fails(chapters_json)
-        except requests.exceptions.ConnectionError:
-            network_error()
+        
+        chapters_json = self.scraper_get(CHAPTERS_WEBSITE + self.current_manga.uuid)
         chapters_full = load_json(chapters_json.content, 'data', 'result')
         #CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
         for chapter in chapters_full:
@@ -81,7 +78,7 @@ class InManga(MangaTemplate):
     def download_pages(self, chapter_num) -> None:
         manga_chapter = self.current_manga.chapters[chapter_num]
         try:
-            chapter_page = self.SCRAPER.get(manga_chapter.url)
+            chapter_page = self.scraper_get(manga_chapter.url)
 
             if success(chapter_page, print_ok=False):
                 html = BeautifulSoup(chapter_page.content, 'html.parser')

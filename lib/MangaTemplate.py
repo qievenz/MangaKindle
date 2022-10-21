@@ -1,9 +1,10 @@
 
 from abc import ABC, abstractmethod
 import os
-from typing import List
+from typing import Dict, List
+from urllib import request
 from colorama import Fore
-from lib.Common import encode_path, print_colored, success, write_file
+from lib.Common import encode_path, exit_if_fails, network_error, print_colored, success, write_file
 from lib.results.manga_class import Chapter, Manga
 import cloudscraper
 
@@ -33,19 +34,27 @@ class MangaTemplate(ABC):
             separation = ' ' * (20 - len(text))
             print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
             return False
-        req = self.SCRAPER.get(url, headers=headers)
+        req = self.scraper_get(url, headers=headers)
         if success(req, text, ok, print_ok=bool(text)):
             data = req.content
             write_file(path, data)
             return True
         return False
     
+    def scraper_get(self, url, headers=None, data=None):
+        try:
+            response = self.SCRAPER.get(url, headers=headers, data=data)
+            exit_if_fails(url)
+        except request.exceptions.ConnectionError:
+            network_error()
+        return response
+    
     @abstractmethod
     def online_search(self, manga_name) -> List[Manga]:
         pass
     
     @abstractmethod
-    def get_chapters(self) -> List[Chapter]:
+    def get_chapters(self) -> Dict[float, Chapter]:
         pass
     
     @abstractmethod

@@ -36,14 +36,9 @@ class LectorManga(MangaTemplate):
             'Referer': SEARCH_URL + manga_name,
             'X-Requested-With': 'XMLHttpRequest'
         }
+        
         manga_name_encode = encode_url_format(manga_name)
-
-        try:
-            search = self.SCRAPER.get(SEARCH_URL + manga_name_encode, data=data, headers=headers)
-            exit_if_fails(search)
-        except requests.exceptions.ConnectionError:
-            network_error()
-
+        search = self.scraper_get(SEARCH_URL + manga_name_encode, data=data, headers=headers)
         results_bea = BeautifulSoup(search.content, 'html.parser').find_all(name="a", attrs={"class" : "text-light font-weight-light"}, href=True, recursive=True)
 
         for result_bea in results_bea:
@@ -105,35 +100,33 @@ class LectorManga(MangaTemplate):
                 }
         
         self.renew_scrapper()
-        url_1_get = self.SCRAPER.get(manga_chapter.url, headers=headers)
+        url_1_get = self.scraper_get(manga_chapter.url, headers=headers)
+        url_1_bea = BeautifulSoup(url_1_get.content, 'html.parser')
+        
+        date = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-3]
+        id = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-2]
+        pages = ast.literal_eval(re.search("var images = JSON.parse(.*);", str(url_1_bea)).group(1).replace('(\'', '').replace('\')', ''))
 
-        if success(url_1_get, print_ok=False):
-            url_1_bea = BeautifulSoup(url_1_get.content, 'html.parser')
-            
-            date = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-3]
-            id = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-2]
-            pages = ast.literal_eval(re.search("var images = JSON.parse(.*);", str(url_1_bea)).group(1).replace('(\'', '').replace('\')', ''))
-
-            chapter_dir = chapter_directory(self.current_manga.title, chapter_num)
-            page_number = 1
-            headers = {
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'es-419,es;q=0.6',
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-                'Referer': self.current_manga.url,
-                'Cache-Control': 'no-cache',
-                'Upgrade-Insecure-Requests': '1',
-                'Connection': 'keep-alive',
-                'sec-fetch-dest': 'image',
-                'sec-fetch-mode': 'no-cors',
-                'sec-fetch-site': 'same-site',
-                'sec-fetch-user': '?1',
-                'sec-gpc': '1'
-            }
-            
-            for img in pages:
-                url = f"{IMAGE_WEBSITE}/{date}/{id}/{img}"
-                self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', headers=headers)
-                page_number = page_number+1
+        chapter_dir = chapter_directory(self.current_manga.title, chapter_num)
+        page_number = 1
+        headers = {
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'es-419,es;q=0.6',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            'Referer': self.current_manga.url,
+            'Cache-Control': 'no-cache',
+            'Upgrade-Insecure-Requests': '1',
+            'Connection': 'keep-alive',
+            'sec-fetch-dest': 'image',
+            'sec-fetch-mode': 'no-cors',
+            'sec-fetch-site': 'same-site',
+            'sec-fetch-user': '?1',
+            'sec-gpc': '1'
+        }
+        
+        for img in pages:
+            url = f"{IMAGE_WEBSITE}/{date}/{id}/{img}"
+            self.download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', headers=headers)
+            page_number = page_number+1
