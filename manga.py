@@ -10,6 +10,7 @@ from multiprocessing import freeze_support
 from lib.CheckVersion import CheckVersion
 from lib.Common import *
 from lib.LocalManga import LocalManga
+from lib.OnlineMangaTemplate import OnlineMangaTemplate
 from lib.results.manga_class import Manga
 
 def install_dependencies(dependencies_file):
@@ -36,18 +37,35 @@ from lib.LectorManga import LectorManga
 from colorama import Fore, Style, init as init_console_colors
 
 
-def create_manga_service_and_search_online(manga_name) -> List[MangaTemplate]:
+def create_manga_service_and_search_online(title) -> List[OnlineMangaTemplate]:
   results = []
-  for subclass in MangaTemplate.__subclasses__():
+  for subclass in OnlineMangaTemplate.__subclasses__():
     manga_class = subclass()
-    manga_class.online_search(manga_name)
+    manga_class.base_search(title)
     if manga_class.search_results: results.append(manga_class)
+  if not results: not_found(title)
   return results
+
+def title_selection(manga_services) -> MangaTemplate:
+  option = 0
+  for manga_service in manga_services:
+    for title in manga_service.search_results:
+      print(f"[{option}] {manga_service.name} - {title.title}")
+      option += 1
+  selection = int(input("Select title: "))
+  for manga_service in manga_services:
+    if selection > len(manga_service.search_results):
+      selection -= len(manga_service.search_results)
+      continue
+    else:
+      manga_service.current_manga = manga_service.search_results[selection]
+      return manga_service
 
 if __name__ == "__main__":
   cancellable()
   freeze_support()
   init_console_colors()
+  
   # PARSE ARGS
   ass = ArgsSingleService()
   ass.args = set_args(CheckVersion)
@@ -62,56 +80,27 @@ if __name__ == "__main__":
 
   MANGA = ' '.join(args.manga)
 
-  # SEARCH ANIME
-
   search_type = f'in {MANGA_DIR}' if args.cache else 'online'
-  print_colored(f"Searching '{MANGA}' {search_type}...", Style.BRIGHT)
 
-  results = []
-  manga = Manga()
-  match = False
+  manga_service = None
   if args.cache: # offline search
-    encoded_title = encode(MANGA).upper()
-    for cached in folders(MANGA_DIR):
-      manga_cache_name = cached[0]
-      encoded_cached = manga_cache_name.upper()
-      if titles_match(MANGA, manga_cache_name):
-        match = True
-        manga.title = decode(manga_cache_name)
-        results.append(manga)
-        break
+    manga_service = LocalManga()
+    manga_service.base_search(MANGA)
+    manga_service = title_selection([manga_service])
   else: # online search
     manga_services = create_manga_service_and_search_online(MANGA)
-    option = 0
-    for manga_service in manga_services:
-      for title in manga_service.search_results:
-        print(f"[{option}] {manga_service.name} - {title.title}")
-        option += 1
-    selection = int(input("Select title: "))
-    for manga_service in manga_services:
-      if selection > len(manga_service.search_results):
-        selection -= len(manga_service.search_results)
-        continue
-      else:
-        manga_service.current_manga = manga_service.search_results[selection]
-        manga = manga_service.current_manga
-        match = True
-        break
+    manga_service = title_selection(manga_services)
 
-  print_colored(MANGA, Fore.BLUE)
+  print_colored(manga_service.current_manga.title, Fore.BLUE)
 
   # RETRIEVE CHAPTERS
 
-  directory = os.path.abspath(manga_directory(manga.title))
+  directory = os.path.abspath(manga_directory(manga_service.current_manga.title))
 
-  if args.cache:
-    ALL_CHAPTERS = [float(chapter[0]) for chapter in folders(directory)]
-  else:
-    ALL_CHAPTERS = manga_service.get_chapters()
-    #ALL_CHAPTERS = CHAPTERS_IDS.keys()
+  ALL_CHAPTERS = manga_service.get_chapters()
 
   if not ALL_CHAPTERS:
-    error(f"There are no chapters of '{manga.title}' available {search_type}")
+    error(f"There are no chapters of '{manga_service.current_manga.title}' available {search_type}")
   
   ALL_CHAPTERS = sorted(ALL_CHAPTERS)
 
@@ -142,9 +131,9 @@ if __name__ == "__main__":
   if not args.cache:
     # DOWNLOAD CHAPTERS    
     for chapter in CHAPTERS:
-      print_colored(f'Downloading {manga.title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
+      print_colored(f'Downloading {manga_service.current_manga.title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
 
-      manga_service.download_pages(chapter)
+      manga_service.get_pages(chapter)
 
   extension = f'.{args.format.lower()}'
   args.format = args.format.upper()
@@ -155,17 +144,17 @@ if __name__ == "__main__":
     if args.format == 'PDF':
       chapters_paths = []
       for chapter in CHAPTERS:
-        chapter_dir = chapter_directory(manga.title, chapter)
+        chapter_dir = chapter_directory(manga_service.current_manga.title, chapter)
         page_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda page_path: int(page_path[0]))
         page_paths = list(map(lambda page_path: page_path[1], page_number_paths))
         if args.single:
           chapters_paths.extend(page_paths)
         else:
-          path = f'{MANGA_DIR}/{manga.title} {chapter:g}{extension}'
+          path = f'{MANGA_DIR}/{manga_service.current_manga.title} {chapter:g}{extension}'
           convert_to_pdf(path, page_paths)
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
-        path = f'{MANGA_DIR}/{manga.title} {chapter_interval}{extension}'
+        path = f'{MANGA_DIR}/{manga_service.current_manga.title} {chapter_interval}{extension}'
         convert_to_pdf(path, chapters_paths)
     else:
       # CONVERT TO E-READER FORMAT
@@ -179,26 +168,26 @@ if __name__ == "__main__":
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
         with tempfile.TemporaryDirectory() as temp:
-          copy_all([(chapter, chapter_directory(manga.title, chapter)) for chapter in CHAPTERS], temp)
-          title = f'{manga.title} {chapter_interval}'
+          copy_all([(chapter, chapter_directory(manga_service.current_manga.title, chapter)) for chapter in CHAPTERS], temp)
+          title = f'{manga_service.current_manga.title} {chapter_interval}'
           print_colored(title, Fore.BLUE)
           argv = argv + ['--title', title, temp] # all chapters in manga directory are packed
           cache_convert(argv)
-          path = f'{MANGA_DIR}/{manga.title} {chapter_interval}{extension}'
+          path = f'{MANGA_DIR}/{manga_service.current_manga.title} {chapter_interval}{extension}'
           os.rename(f'{MANGA_DIR}/{os.path.basename(temp)}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
       else:
         for chapter in CHAPTERS:
-          title = f'{manga.title} {chapter:g}'
+          title = f'{manga_service.current_manga.title} {chapter:g}'
           print_colored(title, Fore.BLUE)
-          argv_chapter = argv + ['--title', title, chapter_directory(manga.title, chapter)]
+          argv_chapter = argv + ['--title', title, chapter_directory(manga_service.current_manga.title, chapter)]
           cache_convert(argv_chapter)
-          path = f'{MANGA_DIR}/{manga.title} {chapter:g}{extension}'
+          path = f'{MANGA_DIR}/{manga_service.current_manga.title} {chapter:g}{extension}'
           os.rename(f'{MANGA_DIR}/{chapter:g}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
   else:
     if len(CHAPTERS) == 1:
-      directory = os.path.abspath(chapter_directory(manga.title, CHAPTERS[0]))
+      directory = os.path.abspath(chapter_directory(manga_service.current_manga.title, CHAPTERS[0]))
       chapter_intervals_info = ''
     else:
       chapter_intervals_info = f" ({chapters_to_intervals_string(CHAPTERS, interval_sep=', ')})"

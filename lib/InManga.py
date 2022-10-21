@@ -2,8 +2,8 @@ import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
 from lib.Common import chapter_directory, exit_if_fails, load_json, network_error, not_found, success
+from lib.OnlineMangaTemplate import OnlineMangaTemplate
 from lib.results.manga_class import Chapter, Manga
-from lib.MangaTemplate import MangaTemplate
 
 PROVIDER_WEBSITE = "https://inmanga.com"
 IMAGE_WEBSITE = f"{PROVIDER_WEBSITE}/page/getPageImage/?identification="
@@ -11,11 +11,8 @@ CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/getall?mangaIdentification="
 SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
 CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
 
-class InManga(MangaTemplate):
-    def online_search(self, manga_name) -> List[Manga]:
-        if self.search_results:
-            return self.search_results
-        
+class InManga(OnlineMangaTemplate):
+    def search(self, manga_name) -> List[Manga]:
         data = {
             'hfilter[generes][]': '-1',
             'filter[queryString]': manga_name,
@@ -48,11 +45,11 @@ class InManga(MangaTemplate):
 
         for result_bea in results_bea:
             result = Manga()
-            result.url = result_bea.get('href')
-            if result.url is None:
+            result.path = result_bea.get('href')
+            if result.path is None:
                 not_found()
-            result.encoded_title = result.url.split('/')[-2] # encoded title
-            result.uuid = result.url.split('/')[-1]
+            result.encoded_title = result.path.split('/')[-2] # encoded title
+            result.uuid = result.path.split('/')[-1]
             result.title = result_bea.find('h4').get_text().strip() # may contain special characters
             
             self.search_results.append(result)
@@ -70,15 +67,15 @@ class InManga(MangaTemplate):
             manga_chapter = Chapter()
             #manga_chapter.number = float(chapter['Number'])
             manga_chapter.uuid = chapter['Identification']
-            manga_chapter.url = CHAPTER_PAGES_WEBSITE + manga_chapter.uuid
+            manga_chapter.path = CHAPTER_PAGES_WEBSITE + manga_chapter.uuid
             
             self.current_manga.chapters[float(chapter['Number'])] = manga_chapter
         return self.current_manga.chapters
     
-    def download_pages(self, chapter_num) -> None:
+    def get_pages(self, chapter_num) -> None:
         manga_chapter = self.current_manga.chapters[chapter_num]
         try:
-            chapter_page = self.scraper_get(manga_chapter.url)
+            chapter_page = self.scraper_get(manga_chapter.path)
 
             if success(chapter_page, print_ok=False):
                 html = BeautifulSoup(chapter_page.content, 'html.parser')
