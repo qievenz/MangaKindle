@@ -12,6 +12,7 @@ class MangaTemplate(ABC):
     current_manga: Manga
     
     def __init__(self):
+        self.name = self.__class__.__name__
         self.search_results = []
         self.current_manga = Manga()
         self.SCRAPER = cloudscraper.create_scraper(browser = 'chrome', allow_brotli = False, debug = False)

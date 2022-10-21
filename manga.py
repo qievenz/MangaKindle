@@ -10,6 +10,7 @@ import subprocess
 from multiprocessing import freeze_support
 from lib.CheckVersion import CheckVersion
 from lib.Common import *
+from lib.LocalManga import LocalManga
 from lib.results.manga_class import Manga
 
 def install_dependencies(dependencies_file):
@@ -36,21 +37,18 @@ from lib.LectorManga import LectorManga
 from colorama import Fore, Style, init as init_console_colors
 
 
-def create_manga_service_and_search_online(manga_name) -> MangaTemplate:
+def create_manga_service_and_search_online(manga_name) -> List[MangaTemplate]:
+  results = []
   for subclass in MangaTemplate.__subclasses__():
     manga_class = subclass()
     manga_class.online_search(manga_name)
-    if manga_class.search_results: break
-  if subclass is None:
-      raise ValueError("No Manga implementation found " + repr(manga_name))
-  return manga_class
+    if manga_class.search_results: results.append(manga_class)
+  return results
 
-    
 if __name__ == "__main__":
   cancellable()
   freeze_support()
   init_console_colors()
-  
   # PARSE ARGS
   ass = ArgsSingleService()
   ass.args = set_args(CheckVersion)
@@ -84,23 +82,22 @@ if __name__ == "__main__":
         results.append(manga)
         break
   else: # online search
-    manga_service = create_manga_service_and_search_online(MANGA)
-    
-    results = manga_service.search_results
-    if len(results) == 0:
-      not_found(MANGA)
-    elif len(results) == 1:
-        match = True
-        manga_service.current_manga = results[0]
+    manga_services = create_manga_service_and_search_online(MANGA)
+    option = 0
+    for manga_service in manga_services:
+      for title in manga_service.search_results:
+        print(f"[{option}] {manga_service.name} - {title.title}")
+        option += 1
+    selection = int(input("Select title: "))
+    for manga_service in manga_services:
+      if selection > len(manga_service.search_results):
+        selection -= len(manga_service.search_results)
+        continue
+      else:
+        manga_service.current_manga = manga_service.search_results[selection]
         manga = manga_service.current_manga
-    elif len(results) > 1:
-      print("select one")
-      i = 0
-      for title in results:
-        print(f"[{i}] {title.title}")
-        i = i+1
-      manga_service.current_manga = results[int(input())]
-      manga = manga_service.current_manga
+        match = True
+        break
 
   print_colored(MANGA, Fore.BLUE)
 
