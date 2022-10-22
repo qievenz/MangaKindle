@@ -34,8 +34,9 @@ class LocalManga(MangaTemplate):
             chapter = Chapter()
             chapter.uuid = manga_chapter
             chapter.path = manga_chapter
-            chapter.pages = self.get_pages(float(chapter.uuid))
             chapters[float(chapter.uuid)] = chapter
+        
+        self.current_manga.chapters = chapters
         return chapters
             
     def get_pages(self, chapter_num) -> Dict[float, Page]:
@@ -43,11 +44,12 @@ class LocalManga(MangaTemplate):
             return self.current_manga.chapters[chapter_num].pages
         
         pages = {}
-        chapter_dir = chapter_directory(self.current_manga.title, chapter_num)
+        chapter_dir = self.current_manga.chapters[chapter_num].path
         page_files = os.listdir(chapter_dir)
         for page_file in page_files:
             page = Page()
             page.uuid = page_file.split('.')[0]
             page.path = chapter_dir + "/" + page_file
             pages[float(page.uuid)] = page
+        self.current_manga.chapters[chapter_num].pages = pages
         return pages
