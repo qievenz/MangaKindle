@@ -45,7 +45,8 @@ def exit_if_fails(request):
         exit(1)
 
 def not_found(manga):
-  error(f"Manga '{manga}' not found")
+  message = f"Manga '{manga}' not found"
+  print_colored(message, Fore.RED, Style.BRIGHT)
   
 def print_source(html_soup):
   print_dim(html_soup.prettify())
@@ -246,8 +247,6 @@ def chapters_in_intervals(sorted_all_chapters, chapter_intervals):
                 if not_found_start_chapter > end_chapter:
                     not_found_start_chapter = end_chapter
                 not_found_chapter_intervals.append((not_found_start_chapter, end_chapter))
-            else:
-                not_found_chapter_intervals.append((start_chapter, end_chapter))
         
     if not_found_chapter_intervals:
         not_found_chapter_intervals = merge_intervals(not_found_chapter_intervals)

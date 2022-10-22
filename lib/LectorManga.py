@@ -97,7 +97,7 @@ class LectorManga(OnlineMangaTemplate):
                 }
         
         self.renew_scrapper()
-        url_1_get = self.scraper_get(manga_chapter.url, headers=headers)
+        url_1_get = self.scraper_get(manga_chapter.path, headers=headers)
         url_1_bea = BeautifulSoup(url_1_get.content, 'html.parser')
         
         date = re.search("var dirPath = '(.*)';", str(url_1_bea)).group(1).split("/")[-3]

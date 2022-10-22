@@ -34,6 +34,7 @@ install_dependencies("dependencies.txt")
 from lib.MangaTemplate import MangaTemplate
 from lib.InManga import InManga
 from lib.LectorManga import LectorManga
+from lib.HentaiFox import HentaiFox
 from colorama import Fore, Style, init as init_console_colors
 
 
@@ -106,7 +107,7 @@ if __name__ == "__main__":
 
   last = ALL_CHAPTERS[-1]
   
-  CHAPTER_INTERVALS = parse_chapter_intervals(' '.join(args.chapters), last.number) if args.chapters else get_chapter_intervals(ALL_CHAPTERS)
+  CHAPTER_INTERVALS = parse_chapter_intervals(' '.join(args.chapters), last) if args.chapters else get_chapter_intervals(ALL_CHAPTERS)
 
   CHAPTERS, chapters_not_found_intervals = chapters_in_intervals(ALL_CHAPTERS, CHAPTER_INTERVALS)
 
