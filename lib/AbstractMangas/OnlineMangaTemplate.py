@@ -5,7 +5,7 @@ from re import search
 from typing import Dict, List
 from colorama import Fore
 from lib.Common import encode_path, exit_if_fails, network_error, print_colored, success, write_file
-from lib.MangaTemplate import MangaTemplate
+from lib.AbstractMangas.MangaTemplate import MangaTemplate
 from lib.results.manga_class import Chapter, Manga, Page
 import cloudscraper
 import requests
@@ -23,6 +23,7 @@ class OnlineMangaTemplate(MangaTemplate, ABC):
                                             'desktop': False
                                             },
                                     captcha={'provider': '2captcha'})
+
 
     def download(self, filename, url, directory='.', extension='png', text='', ok=200, headers=None):
         path = encode_path(filename, extension, directory)

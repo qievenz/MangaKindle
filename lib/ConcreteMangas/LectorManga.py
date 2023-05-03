@@ -4,7 +4,7 @@ import requests
 from typing import Dict, List
 from bs4 import BeautifulSoup
 from lib.Common import chapter_directory, encode_url_format, exit_if_fails, network_error, not_found, success
-from lib.OnlineMangaTemplate import OnlineMangaTemplate
+from lib.AbstractMangas.OnlineMangaTemplate import OnlineMangaTemplate
 from lib.results.manga_class import Chapter, Manga
 import re
 

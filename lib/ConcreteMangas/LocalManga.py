@@ -5,7 +5,7 @@ from typing import Dict, List
 
 from lib.Common import chapter_directory, decode, encode, folders, manga_directory, titles_match
 from lib.Constants import MANGA_DIR
-from lib.MangaTemplate import MangaTemplate
+from lib.AbstractMangas.MangaTemplate import MangaTemplate
 from lib.results.manga_class import Chapter, Manga, Page
 
 

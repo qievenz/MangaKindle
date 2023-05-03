@@ -9,8 +9,8 @@ import subprocess
 from multiprocessing import freeze_support
 from lib.CheckVersion import CheckVersion
 from lib.Common import *
-from lib.LocalManga import LocalManga
-from lib.OnlineMangaTemplate import OnlineMangaTemplate
+from lib.ConcreteMangas.LocalManga import LocalManga
+from lib.AbstractMangas.OnlineMangaTemplate import OnlineMangaTemplate
 from lib.results.manga_class import Manga
 
 def install_dependencies(dependencies_file):
@@ -31,10 +31,10 @@ def install_dependencies(dependencies_file):
 install_dependencies("dependencies.txt")
 
 
-from lib.MangaTemplate import MangaTemplate
-from lib.InManga import InManga
-from lib.LectorManga import LectorManga
-from lib.HentaiFox import HentaiFox
+from lib.AbstractMangas.MangaTemplate import MangaTemplate
+from lib.ConcreteMangas.InManga import InManga
+from lib.ConcreteMangas.LectorManga import LectorManga
+from lib.ConcreteMangas.HentaiFox import HentaiFox
 from colorama import Fore, Style, init as init_console_colors
 
 
