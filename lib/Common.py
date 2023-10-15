@@ -383,3 +383,12 @@ def cache_convert(argv):
     
 def encode_url_format(name):
   return urllib.parse.quote(name)
+
+def file_exists(self, filename, directory='.', extension='png', text=''):
+    path = encode_path(filename, extension, directory)
+    if os.path.isfile(path):
+        text = text if text else path
+        separation = ' ' * (20 - len(text))
+        print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
+        return True
+    return False

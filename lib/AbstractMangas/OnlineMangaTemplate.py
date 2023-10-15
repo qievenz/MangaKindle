@@ -42,7 +42,6 @@ class OnlineMangaTemplate(MangaTemplate, ABC):
     def scraper_get(self, url, headers=None, data=None):
         try:
             response = self.SCRAPER.get(url, headers=headers, data=data)
-            exit_if_fails(response)
         except requests.exceptions.ConnectionError:
             network_error()
         return response

@@ -1,7 +1,7 @@
-requests
-cloudscraper
-bs4
-colorama
-img2pdf
-KindleComicConverter
-Wand
+requests==2.28.1
+cloudscraper==1.2.64
+bs4==0.0.1
+colorama==0.4.5
+img2pdf==0.4.4
+KindleComicConverter==5.5.2
+Wand==0.6.10
